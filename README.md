@@ -13,6 +13,9 @@
 A 1inch.exchange v2 swap path parser in python.   
 
 
+![](demontration.gif)  
+
+
 - [Quick Start](#quick-start)
   * [Option 1: Use Docker Image](#option-1-use-docker-image)
   * [Option 2: On Your Host Machine](#option-2-on-your-host-machine)
