@@ -6,12 +6,12 @@ import abis
 import sys,os 
 
 
-def print_usage():
+if len(sys.argv) < 2:
     print('python main.py <tx hash> [web3 http endpoint]\n')
     sys.exit()
 
-if len(sys.argv) < 2:
-    print_usage()
+
+# Setup 0: Create Web3 Instance
 
 default_web3_http_endpoint = 'http://127.0.0.1:8545'  
 web3_http_endpoints = default_web3_http_endpoint
@@ -19,11 +19,13 @@ web3_http_endpoints = default_web3_http_endpoint
 if len(sys.argv) >= 3:
     web3_http_endpoints = sys.argv[2]
 
-print('Notice: using web3 http endpoint : {}\n'.format(web3_http_endpoints)) 
+w3=web3.Web3(web3.HTTPProvider(web3_http_endpoints))
+
+print('\nNotice: using web3 http endpoint : {}\n'.format(web3_http_endpoints)) 
+
+# Setup 1: Create 1inch.exchange v2  web3 contract instance 
 
 input_tx_hash = sys.argv[1] 
-
-w3=web3.Web3(web3.HTTPProvider(web3_http_endpoints))
 
 one_inch_exchange_v2_addr = '0x111111125434b319222CdBf8C261674aDB56F3ae'
 
@@ -32,23 +34,28 @@ one_inch = w3.eth.contract(
     abi = abis.abi_1inch_exchange_v2
 )
 
+
+
 print('Fetching transaction from web3 provider...\n')
+tx = w3.eth.getTransaction(input_tx_hash)
+
+
 
 # Step 0:  Preflights, is this tx a swap on 1inch exchange? 
-
-tx = w3.eth.getTransaction(input_tx_hash)
 
 # TODO: swap on 1inch.exchange through another contract ? 
 if tx['to'] != one_inch_exchange_v2_addr:
     raise Exception("May not be a 1inch v2 swap transaction, tx.to is {}, rather than {}".format(tx.to,one_inch_exchange_v2_addr))
 
-# initiator of the tx 
-initiator = tx['from']
-
-# decode input data
+# decode transaction input data
 decoded_input = one_inch.decode_function_input(tx['input'])
 
+# calling function name 
 fn_name = decoded_input[0].fn_name 
+# calling arguments 
+one_inch_caller = decoded_input[1]['caller']
+src_receiver, dst_receiver= decoded_input[1]['desc'][2:4]
+
 
 # we take only two kinds of function calls into account: 
 #   - discountedSwap : swap with chi burnt  
@@ -59,11 +66,8 @@ if fn_name not in ['swap','discountedSwap']:
     raise Exception("May not be a 1inch swap transaction, {} is called.".format(fn_name))
 
 
-# args
-one_inch_caller = decoded_input[1]['caller']
-desc = decoded_input[1]['desc']
 
-(src_token,dst_token, src_receiver, dst_receiver, amount_in)=desc[:5]
+# Okay, Let's start to parse event logs... 
 
 
 # Step 1: Get Receipts 
@@ -74,6 +78,12 @@ receipts = w3.eth.getTransactionReceipt(input_tx_hash).logs
 # create a  parser
 parse = SwapEventParser(w3)
 
+# swap nodes 
+# each node is simply a string which describes the swap
+# 
+# eg: 
+#    Weth: swap 60.0 ETH(ether) for 60.0 WETH(Wrapped Ether)
+# 
 swap_nodes = []
 
 # the summary of the swap
@@ -167,20 +177,17 @@ for ind in range(0,len(receipts)):
             
 
 # Step 3: Generate Dot Graph from swaps 
-
 dot = Digraph(comment='Swap Path for {} in dot.'.format(input_tx_hash)) 
 
 # node index 
 node_indices = [i for i in range(0,len(swap_nodes))]
 
 # nodes 
-for i in node_indices:
-    dot.node(str(i),label=swap_nodes[i],shape='box')
+[ dot.node(str(i),label=swap_nodes[i],shape='box') for i in node_indices ]
 
 # edges 
-edges_tuple = zip(node_indices,node_indices[1:])
+[ dot.edge(str(s),str(e)) for s,e in zip(node_indices,node_indices[1:]) ]
 
-[ dot.edge(str(s),str(e)) for s,e in edges_tuple ] 
 
 print('\n\nSwap Graph of {} : \n'.format(input_tx_hash))
 
