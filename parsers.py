@@ -153,7 +153,7 @@ class SwapEventParser:
 
         # kyber proxy
         if addr == _addr_kyber_proxy:
-            return 'kyber-proxy'
+            return 'Kyber'
 
         # curve
         pool_name = get_curve_pool_name(addr)
@@ -167,25 +167,23 @@ class SwapEventParser:
 
         # bancor 
         if addr == _addr_bancor_network:
-            return 'bancor-network'
+            return 'Bancor'
 
         if addr == _address_weth:
-            return 'weth'
+            return 'Weth'
         
         if addr in [_addr_shell_1,_addr_shell_2]:
-            return 'shell'
+            return 'Shell'
 
         if addr == _address_oasis:
-            return 'oasis'
+            return 'Oasis'
         
         if addr == _address_0x_v2:
-            return '0x-v2'
+            return '0x-V2'
 
         if addr == _address_0x_v3:
-            return '0x-v3'
+            return '0x-V3'
         
-
-
         # TODO: use a cache to reduce web3 rpc calls 
 
         # get the code of the contract
@@ -198,15 +196,15 @@ class SwapEventParser:
         code_hash = compute_code_sha256_hash(code)
 
         if code_hash == _uniswap_v2_pair_code_hash:
-            return 'uniswap-v2-pair'
+            return 'Uniswap-V2'
         if code_hash == _sushiswap_pair_code_hash:
-            return 'sushiswap-pair'
+            return 'SushiSwap'
         if code_hash == _bpool_code_hash:
-            return 'balancer-pool'
+            return 'Balancer'
         if code_hash == _uniswap_v1_code_hash:
-            return 'uniswap-v1'
+            return 'Uniswap-V1'
         if code_hash == _mooniswap_code_hash:
-            return 'mooniswap'
+            return 'Mooniswap'
         if code_hash == _lua_swap_code_hash:
             return 'LuaSwap'
 

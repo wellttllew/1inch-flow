@@ -25,8 +25,6 @@ print('\nNotice: using web3 http endpoint : {}\n'.format(web3_http_endpoints))
 
 # Setup 1: Create 1inch.exchange v2  web3 contract instance 
 
-input_tx_hash = sys.argv[1] 
-
 one_inch_exchange_v2_addr = '0x111111125434b319222CdBf8C261674aDB56F3ae'
 
 one_inch = w3.eth.contract(
@@ -35,6 +33,9 @@ one_inch = w3.eth.contract(
 )
 
 
+# get Transaction Hash 
+
+input_tx_hash = sys.argv[1] 
 
 print('Fetching transaction from web3 provider...\n')
 tx = w3.eth.getTransaction(input_tx_hash)
@@ -98,82 +99,54 @@ for ind in range(0,len(receipts)):
     t = parse.parse_addr(log['address'])
     if t == 'other-contract':
         continue 
-    elif t == 'kyber-proxy':
-        swap = parse.parse_kyber_trade_event(log)
-        if swap is not None:
-            swap_nodes.append('Kyber: ' + parse.describe_swap(swap))
-    elif t.startswith('curve.fi'):
-        swap = parse.parse_curve(log)
-        if swap is not None:
-            swap_nodes.append(t + ': ' + parse.describe_swap(swap))
-    elif t == 'bancor-network':
-        swap = parse.parse_bancor(log)
-        if swap is not None:
-            swap_nodes.append('Bancor: '+ parse.describe_swap(swap))
-    elif t == 'uniswap-v2-pair':
-        swap = parse.parse_uniswap_v2_swap_event(log)
-        if swap is not None:
-            swap_nodes.append('Uniswap-V2: '+ parse.describe_swap(swap))   
-    elif t == 'sushiswap-pair':
-        swap = parse.parse_sushi_swap_event(log)
-        if swap is not None:
-            swap_nodes.append('SushiSwap: '+ parse.describe_swap(swap))   
-    elif t == 'balancer-pool':
-        swap = parse.parse_balancer(log)
-        if swap is not None:
-            swap_nodes.append('Balancer: '+ parse.describe_swap(swap))    
-    elif t == 'uniswap-v1':
-        swap = parse.parse_uniswap_v1(log)
-        if swap is not None:
-            swap_nodes.append('Uniswap-V1: '+ parse.describe_swap(swap))    
-    elif t == 'mooniswap':
-        swap = parse.parse_mooniswap_pair(log)
-        if swap is not None:
-            swap_nodes.append('Mooniswap: '+ parse.describe_swap(swap))  
-    elif t == 'weth':
-        swap = parse.parse_weth(log)
-        if swap is not None:
-            # Notice: Only some of the Weth tx matter. 
-            actor = swap[-1]
-            if actor not in [ one_inch_exchange_v2_addr, one_inch_caller, src_receiver, dst_receiver]:
-                # this may be an eth wrap or unwrap in another exchange.
-                # and should not be part of our swap path 
-                continue
-            swap_nodes.append('Weth: '+ parse.describe_swap(swap))
-    elif t == 'shell':
-        swap = parse.parse_shell(log)
-        if swap is not None:
-            swap_nodes.append('Shell: '+ parse.describe_swap(swap))    
-    elif t == 'oasis':
-        swap = parse.parse_oasis(log)
-        if swap is not None:
-            swap_nodes.append('Oasis: '+ parse.describe_swap(swap))     
-    elif t == '0x-v2':
-        swap = parse.parse_0x_v2(log)
-        if swap is not None:
-            swap_nodes.append('0x: '+ parse.describe_swap(swap))   
-    elif t == '0x-v3':
-        swap = parse.parse_0x_v3(log)
-        if swap is not None:
-            swap_nodes.append('0x: '+ parse.describe_swap(swap))    
     elif t == '1inch-exchange-v2':
         # parse swap summary 
         swap = parse.parse_1inch_v2_swap(log)
         if swap is not None:
             swap_summary = 'Swap Summary: ' + parse.describe_swap(swap)
+        continue 
+    elif t == 'Kyber':
+        swap = parse.parse_kyber_trade_event(log)
+    elif t.startswith('curve.fi'):
+        swap = parse.parse_curve(log)
+    elif t == 'Bancor':
+        swap = parse.parse_bancor(log)
+    elif t == 'Uniswap-V2':
+        swap = parse.parse_uniswap_v2_swap_event(log) 
+    elif t == 'SushiSwap':
+        swap = parse.parse_sushi_swap_event(log)
+    elif t == 'Balancer':
+        swap = parse.parse_balancer(log) 
+    elif t == 'Uniswap-V1':
+        swap = parse.parse_uniswap_v1(log)  
+    elif t == 'Mooniswap':
+        swap = parse.parse_mooniswap_pair(log)
+    elif t == 'Weth':
+        swap = parse.parse_weth(log)
+    elif t == 'Shell':
+        swap = parse.parse_shell(log) 
+    elif t == 'Oasis':
+        swap = parse.parse_oasis(log)  
+    elif t == '0x-V2':
+        swap = parse.parse_0x_v2(log) 
+    elif t == '0x-V3':
+        swap = parse.parse_0x_v3(log)
     elif t == 'LuaSwap':
         swap = parse.parse_uniswap_v2_swap_event(log)
-        if swap is not None:
-            swap_nodes.append('LuaSwap: '+ parse.describe_swap(swap))   
     elif t.startswith('Compound'):
         swap = parse.parse_ctoken(log)
-        if swap is not None:
-            actor = swap[-1]
-            if actor not in[ one_inch_exchange_v2_addr, one_inch_caller, src_receiver, dst_receiver]:
-                # this may be an ctoken mint/redeem in another exchange.
-                # and should not be part of our swap path 
-                continue
-            swap_nodes.append(t + ': ' + parse.describe_swap(swap))   
+    else:
+        # EOA .. etc 
+        continue
+
+    if swap is not None:
+        actor = swap[-1]
+        if actor not in[ one_inch_exchange_v2_addr, one_inch_caller, src_receiver, dst_receiver]:
+            # this could be an internal transaction in another exchange 
+            # and should not be part of our swap path 
+            continue
+        
+        swap_nodes.append(t + ': ' + parse.describe_swap(swap))   
             
 
 # Step 3: Generate Dot Graph from swaps 

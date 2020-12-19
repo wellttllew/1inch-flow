@@ -167,7 +167,7 @@ Swap Summary: swap 317631.909208 USDT(Tether USD) for 505.20691460183394 ETH(eth
 ```
 
 
-### Some Uniswap-V2 Fork 
+### LuaSwap 
 
 ```
 
@@ -181,7 +181,7 @@ Swap Summary: swap 450.0 USDC(USD Coin) for 0.02206837 WBTC(Wrapped BTC)
 
 ```
 
-### 0x 
+### Mooniswap, 0x, Uniswap-V2 
 
 ```
 Swap Graph of 0x5fffc129dda4dc11a6e212080754ff95a9794b2c5617e849501bb8d9c48613ed : 
@@ -214,7 +214,7 @@ Swap Summary: swap 8537.351057 USDC(USD Coin) for 13.62271059441722 ETH(ether)
 ```
 
 
-### Curve.fi and Bancor 
+### Curve.fi , Shell and  Bancor 
 
 ```
 Swap Graph of 0x89b405604cbe5478fc4a59d1fdb5dad0a73df0fdd8317ebc31e06b9c0ac27839 : 
