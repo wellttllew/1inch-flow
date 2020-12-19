@@ -26,7 +26,7 @@ A 1inch.exchange v2 swap path parser in python.
   * [Mooniswap, 0x, Uniswap-V2](#mooniswap-0x-uniswap-v2)
   * [Curve.fi , Shell and Bancor](#curvefi--shell-and--bancor)
   * [Shell cDai to Dai](#shell-cdai-to-dai)
-- [TODO](#todo)(py38) 
+- [TODO](#todo)
 
 
 
