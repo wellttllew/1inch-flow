@@ -1,4 +1,4 @@
-# 1inch Flow 
+ 1inch Flow 
 
 ```
 
@@ -22,10 +22,11 @@ A 1inch.exchange v2 swap path parser in python.
 - [Examples](#examples)
   * [A typical powerful split swap on 1inch](#a-typical-powerful-split-swap-on-1inch)
   * [SushiSwap, Weth and Kyber](#sushiswap-weth-and-kyber)
-  * [Some Uniswap-V2 Fork](#some-uniswap-v2-fork)
-  * [0x](#0x)
-  * [Curve.fi and Bancor](#curvefi-and-bancor)
-- [TODO](#todo)
+  * [LuaSwap](#luaswap)
+  * [Mooniswap, 0x, Uniswap-V2](#mooniswap-0x-uniswap-v2)
+  * [Curve.fi , Shell and Bancor](#curvefi--shell-and--bancor)
+  * [Shell cDai to Dai](#shell-cdai-to-dai)
+- [TODO](#todo)(py38) 
 
 
 
@@ -98,7 +99,7 @@ Swap Summary: swap 200.0 ETH(ether) for 129135.09600377393 DAI(Dai Stablecoin)
   |
   v
 +----------------------------------------------------------------------------------------------+
-|         0x: swap 1.7633737 WBTC(Wrapped BTC) for 38764.59672184 DAI(Dai Stablecoin)          |
+|        0x-V2: swap 1.7633737 WBTC(Wrapped BTC) for 38764.59672184 DAI(Dai Stablecoin)        |
 +----------------------------------------------------------------------------------------------+
   |
   |
@@ -110,7 +111,7 @@ Swap Summary: swap 200.0 ETH(ether) for 129135.09600377393 DAI(Dai Stablecoin)
   |
   v
 +----------------------------------------------------------------------------------------------+
-|              0x: swap 60.0 WETH(Wrapped Ether) for 38748.6 DAI(Dai Stablecoin)               |
+|             0x-V2: swap 60.0 WETH(Wrapped Ether) for 38748.6 DAI(Dai Stablecoin)             |
 +----------------------------------------------------------------------------------------------+
   |
   |
@@ -124,6 +125,8 @@ Swap Summary: swap 200.0 ETH(ether) for 129135.09600377393 DAI(Dai Stablecoin)
 +----------------------------------------------------------------------------------------------+
 | curve.fi 3 Pool: swap 51854.805287 USDC(USD Coin) for 51711.681705784424 DAI(Dai Stablecoin) |
 +----------------------------------------------------------------------------------------------+
+
+
 
 ```
 
@@ -142,7 +145,7 @@ Swap Summary: swap 317631.909208 USDT(Tether USD) for 505.20691460183394 ETH(eth
   |
   v
 +-----------------------------------------------------------------------------------------+
-|    0x: swap 77819.817756 USDT(Tether USD) for 123.7887819231687 WETH(Wrapped Ether)     |
+|   0x-V2: swap 77819.817756 USDT(Tether USD) for 123.7887819231687 WETH(Wrapped Ether)   |
 +-----------------------------------------------------------------------------------------+
   |
   |
@@ -195,7 +198,7 @@ Swap Summary: swap 8537.351057 USDC(USD Coin) for 13.62271059441722 ETH(ether)
   |
   v
 +--------------------------------------------------------------------------------------------+
-|          0x: swap 4268.675529 USDC(USD Coin) for 4267.617159944333 TUSD(TrueUSD)           |
+|         0x-V2: swap 4268.675529 USDC(USD Coin) for 4267.617159944333 TUSD(TrueUSD)         |
 +--------------------------------------------------------------------------------------------+
   |
   |
@@ -209,6 +212,7 @@ Swap Summary: swap 8537.351057 USDC(USD Coin) for 13.62271059441722 ETH(ether)
 +--------------------------------------------------------------------------------------------+
 |     Weth: swap 6.821274088827156 WETH(Wrapped Ether) for 6.821274088827156 ETH(ether)      |
 +--------------------------------------------------------------------------------------------+
+
 
 
 ```
@@ -228,7 +232,7 @@ Swap Summary: swap 18759.57 BNT(Bancor Network Token) for 30146.549158 USDT(Teth
   |
   v
 +----------------------------------------------------------------------------------------------+
-|           Shell: swap 6034.454361 USDC(USD Coin) for 6029.697878 USDT(Tether USD)            |
+|       Shell Protocol: swap 6034.454361 USDC(USD Coin) for 6029.697878 USDT(Tether USD)       |
 +----------------------------------------------------------------------------------------------+
   |
   |
@@ -249,17 +253,53 @@ Swap Summary: swap 18759.57 BNT(Bancor Network Token) for 30146.549158 USDT(Teth
 |  Bancor: swap 8910.795750000001 BNT(Bancor Network Token) for 14322.790441 USDT(Tether USD)  |
 +----------------------------------------------------------------------------------------------+
 
+
+```
+
+### Shell cDai to Dai 
+
+> When you swap cDai for Dai on Shell, it would not emit a `Trade` event.  
+> Some hacks are needed to make it work.  
+
+
+```
+Swap Graph of 0x77abc19131de0101df0dfc6fbeb02b49eaf4540f9627807ff93cb47ba2e97a13 : 
+
+Swap Summary: swap 3056149.0709 cDAI(Compound Dai) for 151.1764466 cWBTC(Compound Wrapped BTC)
+
++-----------------------------------------------------------------------------------------------------+
+|   Shell Protocol: swap 3056149.0709 cDAI(Compound Dai) for 63661.48901416276 DAI(Dai Stablecoin)    |
++-----------------------------------------------------------------------------------------------------+
+  |
+  |
+  v
++-----------------------------------------------------------------------------------------------------+
+|    curve.fi 3 Pool: swap 63661.48901416276 DAI(Dai Stablecoin) for 63799.238362 USDT(Tether USD)    |
++-----------------------------------------------------------------------------------------------------+
+  |
+  |
+  v
++-----------------------------------------------------------------------------------------------------+
+|             0x-V2: swap 63799.238362 USDT(Tether USD) for 3.05246369 WBTC(Wrapped BTC)              |
++-----------------------------------------------------------------------------------------------------+
+  |
+  |
+  v
++-----------------------------------------------------------------------------------------------------+
+| Compound Wrapped BTC: swap 3.05246369 WBTC(Wrapped BTC) for 151.1764466 cWBTC(Compound Wrapped BTC) |
++-----------------------------------------------------------------------------------------------------+
+
 ```
 
 ## TODO 
 
 Currently there are still some flaws in this project, some transactions can not be correclty parsed:  
 
-- 0x9445f05a8fac6781d1ab9f138372e207dc606417ebe58b6eeed65e7db69013b5  
-  - DODO is not parsed
+- [x] 0x77abc19131de0101df0dfc6fbeb02b49eaf4540f9627807ff93cb47ba2e97a13  
+  - [Trade event is not emitted when you swap cDai for Dai on Shell](https://etherscan.io/address/0x2e703d658f8dd21709a7b458967ab4081f8d3d05#code)  
 
-- 0x77abc19131de0101df0dfc6fbeb02b49eaf4540f9627807ff93cb47ba2e97a13  
-  - [TODO:Shell SelectiveWithdraw and Deposit](https://etherscan.io/address/0x5bAad69480352B634822a7Bbb983b0FD85C9fdAC)  
-
-
+- some other exchanges in 1inch.exchange protocol   
+  - [] DODO: 0x9445f05a8fac6781d1ab9f138372e207dc606417ebe58b6eeed65e7db69013b5  
+  - [] CRO Defi Swap:  0x20eb616c267937ad7230167dacb0fa17840a46ccec951accb494e78749fea1fe     
+  
 

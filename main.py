@@ -91,62 +91,35 @@ swap_nodes = []
 # parsed from 1inch event log.
 swap_summary = ''
 
-for ind in range(0,len(receipts)):
-    # print progress 
-    print('parsing  in progress ... {}/{}'.format(ind+1, len(receipts)))
+# every time when you call parse.parse(), 
+# some logs will be consumed. 
+# 
+# you continue calling parse.parse until logs_left is empty. 
+# 
+logs_left = receipts
 
-    log = receipts[ind]
-    t = parse.parse_addr(log['address'])
-    if t == 'other-contract':
-        continue 
-    elif t == '1inch-exchange-v2':
-        # parse swap summary 
-        swap = parse.parse_1inch_v2_swap(log)
-        if swap is not None:
-            swap_summary = 'Swap Summary: ' + parse.describe_swap(swap)
-        continue 
-    elif t == 'Kyber':
-        swap = parse.parse_kyber_trade_event(log)
-    elif t.startswith('curve.fi'):
-        swap = parse.parse_curve(log)
-    elif t == 'Bancor':
-        swap = parse.parse_bancor(log)
-    elif t == 'Uniswap-V2':
-        swap = parse.parse_uniswap_v2_swap_event(log) 
-    elif t == 'SushiSwap':
-        swap = parse.parse_sushi_swap_event(log)
-    elif t == 'Balancer':
-        swap = parse.parse_balancer(log) 
-    elif t == 'Uniswap-V1':
-        swap = parse.parse_uniswap_v1(log)  
-    elif t == 'Mooniswap':
-        swap = parse.parse_mooniswap_pair(log)
-    elif t == 'Weth':
-        swap = parse.parse_weth(log)
-    elif t == 'Shell':
-        swap = parse.parse_shell(log) 
-    elif t == 'Oasis':
-        swap = parse.parse_oasis(log)  
-    elif t == '0x-V2':
-        swap = parse.parse_0x_v2(log) 
-    elif t == '0x-V3':
-        swap = parse.parse_0x_v3(log)
-    elif t == 'LuaSwap':
-        swap = parse.parse_uniswap_v2_swap_event(log)
-    elif t.startswith('Compound'):
-        swap = parse.parse_ctoken(log)
-    else:
-        # EOA .. etc 
+actors = [ one_inch_exchange_v2_addr, one_inch_caller, src_receiver, dst_receiver]
+
+# the parse loop 
+while len(logs_left) > 0:
+
+    # print progress 
+    print('parsing in progress ... {}/{}'.format( len(receipts)-len(logs_left), len(receipts)))
+
+    logs_left, exchange_name, swap = parse.parse(logs_left, actors)
+
+    if exchange_name == '1inch-exchange-v2':
+        swap_summary = 'Swap Summary: ' +  parse.describe_swap(swap)
         continue
 
     if swap is not None:
-        actor = swap[-1]
+        actor = swap[-2]
         if actor not in[ one_inch_exchange_v2_addr, one_inch_caller, src_receiver, dst_receiver]:
             # this could be an internal transaction in another exchange 
             # and should not be part of our swap path 
             continue
-        
-        swap_nodes.append(t + ': ' + parse.describe_swap(swap))   
+
+        swap_nodes.append(exchange_name + ': ' + parse.describe_swap(swap))   
             
 
 # Step 3: Generate Dot Graph from swaps 

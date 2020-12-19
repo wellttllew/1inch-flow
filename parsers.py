@@ -12,6 +12,8 @@ _bpool_code_hash = '3cec846b68239958db567c515d08c6b451c9317d08c074c0ba15557d4997
 _uniswap_v1_code_hash = 'd9aa84abc57bee6faa73a1a66b522312bfccdc28e05c6d1ba61f4c8a97989564'
 _mooniswap_code_hash = 'ba1072bd1e96774734bfcb382b66d1d9a95218433805bc5fe4ad764311f86986'
 _lua_swap_code_hash = 'e887974281e7a569f8c0e16f6582a97da3f224cf916bdc15dc6e8c653fabd3cf'
+_dodo_code_hash = '82eb82850ae23e61a4713374ef162284d7f458a9828d4c4a4ed7857373e90951'
+
 
 # cureve addresses
 _curve_addrs = [
@@ -46,7 +48,8 @@ _addr_1inch_exchange_v2 = '0x111111125434b319222CdBf8C261674aDB56F3ae'
 
 # shell address 
 _addr_shell_1 = '0x02Af7C867d6Ddd2c87dEcec2E4AFF809ee118FBb'
-_addr_shell_2 = '0x2E703D658f8dd21709a7B458967aB4081F8D3d05'
+_addr_shell_2 = '0x2E703D658f8dd21709a7B458967aB4081F8D3d05' 
+_addr_shells = [_addr_shell_1, _addr_shell_2]
 
 # oasis address 
 _address_oasis = '0x794e6e91555438aFc3ccF1c5076A74F42133d08D'
@@ -61,7 +64,7 @@ _address_zero = '0x0000000000000000000000000000000000000000'
 
 # Weth address
 _address_weth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-
+ 
 
 # ctokens 
 # https://api.compound.finance/api/v2/ctoken
@@ -135,6 +138,78 @@ class SwapEventParser:
     def __init__(self, web3):
         self.web3 = web3
 
+    
+    def parse(self, logs, actors):
+        """ parse logs 
+
+        consume one more log entries from logs to parse a swap. 
+        you should call this multiple times until len(logs_left) == 0.
+
+        actors: the actor is 1inch.exchange caller address, 
+                the user transfer its token to the actor, 
+                and the actor interacts with other exchanges to perform split swaps. 
+
+        returns: 
+            logs_left: logs still not parsed 
+            exchange_name: the exchange name of the swap 
+            swap: (src_token, dst_token, amount_in, amount_out, sender, receiver) or None 
+
+        """
+
+        if len(logs) == 0:
+            return [], '', None 
+
+        # first, shell hack 
+        # read parse_shell_hack for more details about this hack. 
+
+        log_consumed, swap = self.parse_shell_hack(logs,actors)
+
+        if swap is not None:
+            return logs[log_consumed:], 'Shell Protocol', swap 
+        
+
+        # consume exactly one log event: 
+
+        log = logs[0]
+        swap = None 
+
+        t = self.parse_addr(log['address'])
+
+        if t == '1inch-exchange-v2':
+            swap = self.parse_1inch_v2_swap(log) 
+        elif t == 'Kyber':
+            swap = self.parse_kyber_trade_event(log)
+        elif t.startswith('curve.fi'):
+            swap = self.parse_curve(log)
+        elif t == 'Bancor':
+            swap = self.parse_bancor(log)
+        elif t == 'Uniswap-V2':
+            swap = self.parse_uniswap_v2_swap_event(log) 
+        elif t == 'SushiSwap':
+            swap = self.parse_sushi_swap_event(log)
+        elif t == 'Balancer':
+            swap = self.parse_balancer(log) 
+        elif t == 'Uniswap-V1':
+            swap = self.parse_uniswap_v1(log)  
+        elif t == 'Mooniswap':
+            swap = self.parse_mooniswap_pair(log)
+        elif t == 'Weth':
+            swap = self.parse_weth(log)
+        # elif t == 'Shell':
+        #     swap = self.parse_shell(log) 
+        elif t == 'Oasis':
+            swap = self.parse_oasis(log)  
+        elif t == '0x-V2':
+            swap = self.parse_0x_v2(log) 
+        elif t == '0x-V3':
+            swap = self.parse_0x_v3(log)
+        elif t == 'LuaSwap':
+            swap = self.parse_uniswap_v2_swap_event(log)
+        elif t.startswith('Compound'):
+            swap = self.parse_ctoken(log)
+            
+        return logs[1:], t, swap 
+
     def parse_addr(self, addr):
 
         """parse addr
@@ -194,7 +269,6 @@ class SwapEventParser:
             return 'EOA'
 
         code_hash = compute_code_sha256_hash(code)
-
         if code_hash == _uniswap_v2_pair_code_hash:
             return 'Uniswap-V2'
         if code_hash == _sushiswap_pair_code_hash:
@@ -251,14 +325,13 @@ class SwapEventParser:
         )   
 
 
-
         # Swap (index_topic_1 address sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, index_topic_2 address to)
         swap_topic = '0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'
         
         if log.topics[0].hex() != swap_topic:
             # we care only about "Swap" event 
             return None 
-        
+
         token0 = c.get_function_by_signature('token0()')().call() 
         token1 = c.get_function_by_signature('token1()')().call() 
 
@@ -367,7 +440,6 @@ class SwapEventParser:
             args['caller'],
             args['caller'] # sender and receiver is the same
         )
-
 
 
 
@@ -527,6 +599,8 @@ class SwapEventParser:
 
 
     def parse_shell(self,log):
+
+        raise Exception('This method is deprecated, check parse_shell_hack for more details')
 
         w3 = self.web3
         c = w3.eth.contract(
@@ -858,3 +932,116 @@ class SwapEventParser:
             )
         else:
             return None 
+    
+    def parse_shell_hack(self, logs, actors):
+        """ parse shell hack 
+
+        Why the hack? 
+
+        the `parse_shell` function above would fail to parse this transation: 
+
+        0x77abc19131de0101df0dfc6fbeb02b49eaf4540f9627807ff93cb47ba2e97a13
+
+        The contract code is here: 
+
+        https://etherscan.io/address/0x2e703d658f8dd21709a7b458967ab4081f8d3d05#code 
+
+        As you can see, the `Trade` Event is not emmitted for every swap. 
+
+        The lucky part is that there will be no internal eth transfer. 
+        The ERC20 transfer events are sufficient. 
+
+        So here is the hack: 
+
+        - Parse two types of ERC20 Transfer events:
+           - actor to shell 
+           - shell to actor 
+
+        - Combine the two transfer events into a swap 
+
+
+        logs: all logs of the transaction 
+        actors: 1inch caller , which interacts with shell contract 
+
+        returns:  logs_consumed, (src_token, dst_token, amount_in, amount_out, from, to)
+        """
+
+        if len(logs) < 2:
+            return 0, None 
+
+        w3 = self.web3
+
+        # helper function for parse erc20 transfer 
+        def parse_erc20_transfer(log):
+            """ parse erc20 transfer
+
+            return (from, to, value,token_addr) or None 
+            """
+
+            erc20_transfer_topic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+            if log.topics[0].hex() != erc20_transfer_topic:
+                return None 
+            token_addr = to_checksum_address(log['address'])
+
+
+            c = w3.eth.contract(
+                address= token_addr,
+                abi = abis.abi_erc20
+            ) 
+
+            parsed_log = c.events.Transfer().processLog(log)
+            args = parsed_log['args']   
+            return (   
+                args['from'],
+                args['to'],
+                args['value'],
+                token_addr
+            )
+        
+        # we want to get a pair of transfer 
+        #  - from actor to shell 
+        #  - and from shell to actor  
+
+        from_actor_to_shell = None 
+        from_shell_to_actor = None 
+
+
+        # parse actor -> shell 
+
+        # the first log must be from actor to shell 
+        from_actor_to_shell = parse_erc20_transfer(logs[0])
+
+
+        if from_actor_to_shell is None:
+            return 0, None 
+        
+        actor_addr , shell_addr, amount_in, token_in  = from_actor_to_shell
+
+        if actor_addr not in actors or shell_addr not in _addr_shells:
+            return 0, None 
+
+
+        # parse shell -> actor 
+
+        logs_consumed = 1 
+
+        for log in logs[1:]:
+            logs_consumed = logs_consumed + 1
+            transfer = parse_erc20_transfer(log)
+            if transfer is not None:
+                if (actor_addr, shell_addr) == (transfer[1], transfer[0]):
+                    from_shell_to_actor = transfer
+                    break 
+
+        if from_shell_to_actor is not None:
+            _,_, amount_out, token_out  = from_shell_to_actor
+            return logs_consumed, (
+                token_in,
+                token_out,
+                amount_in,
+                amount_out,
+                actor_addr,
+                actor_addr
+            )
+
+        return 0, None 
