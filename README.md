@@ -293,13 +293,17 @@ Swap Summary: swap 3056149.0709 cDAI(Compound Dai) for 151.1764466 cWBTC(Compoun
 
 ## TODO 
 
-Currently there are still some flaws in this project, some transactions can not be correclty parsed:  
+
+Pending: 
+
+- some other exchanges in 1inch.exchange protocol   
+  - `https://api.1inch.exchange/v2.0/protocols`  
+
+
+Done: 
 
 - [x] 0x77abc19131de0101df0dfc6fbeb02b49eaf4540f9627807ff93cb47ba2e97a13  
   - [Trade event is not emitted when you swap cDai for Dai on Shell](https://etherscan.io/address/0x2e703d658f8dd21709a7b458967ab4081f8d3d05#code)  
-
-- some other exchanges in 1inch.exchange protocol   
-  - [] DODO: 0x9445f05a8fac6781d1ab9f138372e207dc606417ebe58b6eeed65e7db69013b5  
-  - [] CRO Defi Swap:  0x20eb616c267937ad7230167dacb0fa17840a46ccec951accb494e78749fea1fe     
-  
-
+- [x] DODO:       
+   - 0x9445f05a8fac6781d1ab9f138372e207dc606417ebe58b6eeed65e7db69013b5  
+   - 0x3f14a928e7cc7c981df27c944a07d855f9456cdd1b8a3306726e287bde8e5723   

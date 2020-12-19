@@ -12,7 +12,7 @@ _bpool_code_hash = '3cec846b68239958db567c515d08c6b451c9317d08c074c0ba15557d4997
 _uniswap_v1_code_hash = 'd9aa84abc57bee6faa73a1a66b522312bfccdc28e05c6d1ba61f4c8a97989564'
 _mooniswap_code_hash = 'ba1072bd1e96774734bfcb382b66d1d9a95218433805bc5fe4ad764311f86986'
 _lua_swap_code_hash = 'e887974281e7a569f8c0e16f6582a97da3f224cf916bdc15dc6e8c653fabd3cf'
-_dodo_code_hash = '82eb82850ae23e61a4713374ef162284d7f458a9828d4c4a4ed7857373e90951'
+_dodo_code_hash = '1c79dcb138598265353cc1bf716a4a9c82e903b63f3701ddc82603ea77130bcd'
 
 
 # cureve addresses
@@ -207,6 +207,8 @@ class SwapEventParser:
             swap = self.parse_uniswap_v2_swap_event(log)
         elif t.startswith('Compound'):
             swap = self.parse_ctoken(log)
+        elif t == 'DODO':
+            swap = self.parse_dodo(log)
             
         return logs[1:], t, swap 
 
@@ -281,6 +283,8 @@ class SwapEventParser:
             return 'Mooniswap'
         if code_hash == _lua_swap_code_hash:
             return 'LuaSwap'
+        if code_hash == _dodo_code_hash:
+            return 'DODO'
 
         return 'other-contract'
 
@@ -1045,3 +1049,49 @@ class SwapEventParser:
             )
 
         return 0, None 
+
+    def parse_dodo(self,log):
+        """ parse dodo
+
+            returns: (src_token, dst_token, amount_in, amount_out, from, to) or None 
+        """
+        
+        w3 = self.web3
+        c = w3.eth.contract(
+            address= to_checksum_address(log['address']),
+            abi = abis.abi_dodo
+        ) 
+
+        base_token_addr = c.get_function_by_signature('_BASE_TOKEN_()')().call()
+        quote_token_addr = c.get_function_by_signature('_QUOTE_TOKEN_()')().call()
+
+        # event BuyBaseToken(address indexed buyer, uint256 receiveBase, uint256 payQuote);
+        # event SellBaseToken(address indexed seller, uint256 payBase, uint256 receiveQuote);
+        
+        buy_basetoken_topic = '0x' + event_abi_to_log_topic(c.events.BuyBaseToken().abi).hex()
+        sell_basetoken_topic = '0x' + event_abi_to_log_topic(c.events.SellBaseToken().abi).hex()
+
+        if log.topics[0].hex() == buy_basetoken_topic:
+            parsed_log = c.events.BuyBaseToken().processLog(log)
+            args = parsed_log['args']   
+            return (
+                quote_token_addr,
+                base_token_addr,
+                args['payQuote'],
+                args['receiveBase'],
+                args['buyer'],
+                args['buyer']
+            )
+        elif log.topics[0].hex() == sell_basetoken_topic:
+            parsed_log = c.events.SellBaseToken().processLog(log)
+            args = parsed_log['args']   
+            return (
+                base_token_addr,
+                quote_token_addr,
+                args['payBase'],
+                args['receiveQuote'],
+                args['seller'],
+                args['seller']
+            )
+        else:
+            return None 
