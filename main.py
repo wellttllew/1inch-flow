@@ -4,6 +4,7 @@ from  graphviz import Digraph
 from parsers import SwapEventParser
 import abis
 import sys,os 
+from validator import validate_swap_path
 
 
 if len(sys.argv) < 2:
@@ -79,17 +80,17 @@ receipts = w3.eth.getTransactionReceipt(input_tx_hash).logs
 # create a  parser
 parse = SwapEventParser(w3)
 
-# swap nodes 
-# each node is simply a string which describes the swap
-# 
-# eg: 
-#    Weth: swap 60.0 ETH(ether) for 60.0 WETH(Wrapped Ether)
-# 
-swap_nodes = []
 
-# the summary of the swap
-# parsed from 1inch event log.
-swap_summary = ''
+# a swap is a tuple of 
+#  (src_token, dst_token, amount_in, amount_out, sender, receiver)
+swaps = []
+whole_swap = None
+
+# a described swap is a string 
+#  eg:  Uniswap-V2: swap 10687.938745899837 CRV(Curve DAO Token) for 10.871034415941738 WETH(Wrapped Ether) 
+described_swaps = []
+described_whole_swap = ''
+
 
 # every time when you call parse.parse(), 
 # some logs will be consumed. 
@@ -109,7 +110,8 @@ while len(logs_left) > 0:
     logs_left, exchange_name, swap = parse.parse(logs_left, actors)
 
     if exchange_name == '1inch-exchange-v2':
-        swap_summary = 'Swap Summary: ' +  parse.describe_swap(swap)
+        whole_swap = swap
+        described_whole_swap = 'Swap Summary: ' + parse.describe_swap(swap)
         continue
 
     if swap is not None:
@@ -119,17 +121,29 @@ while len(logs_left) > 0:
             # and should not be part of our swap path 
             continue
 
-        swap_nodes.append(exchange_name + ': ' + parse.describe_swap(swap))   
-            
+        swaps.append(swap) 
+        described_swaps.append(exchange_name + ': ' + parse.describe_swap(swap)) 
 
-# Step 3: Generate Dot Graph from swaps 
+
+# Step 3: Validate the swap path
+
+# if there are some swaps missing in the parsed swap path, 
+# it is not fully parsed. 
+fully_parsed = validate_swap_path(whole_swap,swaps)
+
+if fully_parsed is False:
+    swap_summary = 'Warning: Failed to parse some swaps.\n\n{}\n'.format(described_whole_swap)
+else:
+    swap_summary = '{}\n'.format(described_whole_swap)
+
+# Step 4: Generate Dot Graph from swaps 
 dot = Digraph(comment='Swap Path for {} in dot.'.format(input_tx_hash)) 
 
 # node index 
-node_indices = [i for i in range(0,len(swap_nodes))]
+node_indices = [i for i in range(0,len(described_swaps))]
 
 # nodes 
-[ dot.node(str(i),label=swap_nodes[i],shape='box') for i in node_indices ]
+[ dot.node(str(i),label=described_swaps[i],shape='box') for i in node_indices ]
 
 # edges 
 [ dot.edge(str(s),str(e)) for s,e in zip(node_indices,node_indices[1:]) ]

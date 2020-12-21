@@ -1,4 +1,4 @@
- 1inch Flow 
+# 1inch Flow 
 
 ```
 
@@ -297,7 +297,8 @@ Swap Summary: swap 3056149.0709 cDAI(Compound Dai) for 151.1764466 cWBTC(Compoun
 Pending: 
 
 - some other exchanges in 1inch.exchange protocol   
-  - `https://api.1inch.exchange/v2.0/protocols`  
+  - `https://api.1inch.exchange/v2.0/protocols`   
+  - [chai](https://etherscan.io/tx/0x40570b7a156fe5c58e40697011bcd4d5666e4d17e22b34cf44f0254ef49cbc36)
 
 
 Done: 
