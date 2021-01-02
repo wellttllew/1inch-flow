@@ -193,6 +193,8 @@ class SwapEventParser:
             swap = self.parse_uniswap_v1(log)  
         elif t == 'Mooniswap':
             swap = self.parse_mooniswap_pair(log)
+        elif t == 'Mooniswap-v2':
+            swap = self.parse_mooniswap_v2_pair(log)
         elif t == 'Weth':
             swap = self.parse_weth(log)
         # elif t == 'Shell':
@@ -269,6 +271,9 @@ class SwapEventParser:
         if code.hex() == '0x':
             # external owner address
             return 'EOA'
+        
+        if self.is_code_mooniswap_v2_pair(bytes(code)):
+            return 'Mooniswap-v2'
 
         code_hash = compute_code_sha256_hash(code)
         if code_hash == _uniswap_v2_pair_code_hash:
@@ -1095,3 +1100,78 @@ class SwapEventParser:
             )
         else:
             return None 
+
+    def parse_mooniswap_v2_pair(self,log):
+        """ parse mooniswap v2 pair
+
+            returns: (src_token, dst_token, amount_in, amount_out, from, to) or None 
+        """
+
+
+        w3 = self.web3
+
+        c = w3.eth.contract(
+            address= to_checksum_address(log['address']),
+            abi = abis.abi_mooniswap_v2
+        ) 
+
+        # event Swapped(
+        #     address indexed sender,
+        #     address indexed receiver,
+        #     address indexed srcToken,
+        #     address dstToken,
+        #     uint256 amount,
+        #     uint256 result,
+        #     uint256 srcAdditionBalance,
+        #     uint256 dstRemovalBalance,
+        #     address referral
+        # );
+        topic = '0x' + event_abi_to_log_topic(c.events.Swapped().abi).hex()
+
+        if log.topics[0].hex() != topic:
+            return None 
+        parsed_log = c.events.Swapped().processLog(log)
+        args = parsed_log['args']   
+
+        return(
+            args['srcToken'],
+            args['dstToken'],
+            args['amount'],
+            args['result'],
+            args['sender'],
+            args['receiver']
+        )
+    
+    def is_code_mooniswap_v2_pair(self,code):
+        """ is this runtime code of mooniswap v2 pair 
+
+            code : runtime code of a contract in bytes 
+
+            return:  False or True 
+
+            check https://github.com/wellttllew/1inch-flow/issues/4 for more details
+
+        """
+
+        # We check only the first num_of_bytes_to_check bytes.
+        # 
+        # These bytes are the instructions for finding
+        # out which function is called by this transaction. 
+        # They are basically some if and else.. 
+        # 
+        num_of_bytes_to_check = 0x30d
+
+        if len(code) < num_of_bytes_to_check:
+            return False 
+
+        bytes_to_check = code[:0x30d]
+
+
+        # compute_code_sha256_hash(mooniswap_v2_pair_runtime_code[0:0x30d])
+        hash_of_mooniswap_v2_first_0x30d_bytes = '9b761fda152c06f7bd263ea62b69be054c53c3157109e9cd6786e0b885e61cdb'
+
+        if compute_code_sha256_hash(bytes_to_check) == hash_of_mooniswap_v2_first_0x30d_bytes:
+            return True 
+        
+        return False
+

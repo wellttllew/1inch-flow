@@ -129,12 +129,7 @@ while len(logs_left) > 0:
 
 # if there are some swaps missing in the parsed swap path, 
 # it is not fully parsed. 
-fully_parsed = validate_swap_path(whole_swap,swaps)
-
-if fully_parsed is False:
-    swap_summary = 'Warning: Failed to parse some swaps.\n\n{}\n'.format(described_whole_swap)
-else:
-    swap_summary = '{}\n'.format(described_whole_swap)
+validate_swap_path(whole_swap,swaps)
 
 # Step 4: Generate Dot Graph from swaps 
 dot = Digraph(comment='Swap Path for {} in dot.'.format(input_tx_hash)) 
@@ -151,7 +146,7 @@ node_indices = [i for i in range(0,len(described_swaps))]
 
 print('\n\nSwap Graph of {} : \n'.format(input_tx_hash))
 
-print(swap_summary + '\n')
+print(described_whole_swap + '\n')
 
 # Last Step: output ascii graph with graph-easy 
 

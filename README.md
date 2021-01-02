@@ -15,7 +15,6 @@ A 1inch.exchange v2 swap path parser in python.
 
 ![](demontration.gif)  
 
-
 - [Quick Start](#quick-start)
   * [Option 1: Use Docker Image](#option-1-use-docker-image)
   * [Option 2: On Your Host Machine](#option-2-on-your-host-machine)
@@ -26,8 +25,8 @@ A 1inch.exchange v2 swap path parser in python.
   * [Mooniswap, 0x, Uniswap-V2](#mooniswap-0x-uniswap-v2)
   * [Curve.fi , Shell and Bancor](#curvefi--shell-and--bancor)
   * [Shell cDai to Dai](#shell-cdai-to-dai)
+  * [Mooniswap V2](#mooniswap-v2)
 - [TODO](#todo)
-
 
 
 ## Quick Start 
@@ -291,6 +290,40 @@ Swap Summary: swap 3056149.0709 cDAI(Compound Dai) for 151.1764466 cWBTC(Compoun
 
 ```
 
+
+### Mooniswap V2 
+
+
+```
+Swap Graph of 0x1d360afbf6030605d5322edcd71e09bb081c264d366e435d8ee661d1d53747c1 : 
+
+Swap Summary: swap 2531.7099999999996 API3(API3) for 6.094422570023974 ETH(ether)
+
+
++---------------------------------------------------------------------------------------------------+
+|     Uniswap-V2: swap 2531.7099999999996 API3(API3) for 6.160274610507125 WETH(Wrapped Ether)      |
++---------------------------------------------------------------------------------------------------+
+  |
+  |
+  v
++---------------------------------------------------------------------------------------------------+
+|  Balancer: swap 6.160274610507125 WETH(Wrapped Ether) for 0.2018670232727951 YFI(yearn.finance)   |
++---------------------------------------------------------------------------------------------------+
+  |
+  |
+  v
++---------------------------------------------------------------------------------------------------+
+| Mooniswap-v2: swap 0.2018670232727951 YFI(yearn.finance) for 3915.491896868341 1INCH(1INCH Token) |
++---------------------------------------------------------------------------------------------------+
+  |
+  |
+  v
++---------------------------------------------------------------------------------------------------+
+|     Mooniswap-v2: swap 3915.491896868341 1INCH(1INCH Token) for 6.094422570023974 ETH(ether)      |
++---------------------------------------------------------------------------------------------------+
+
+```
+
 ## TODO 
 
 
@@ -308,3 +341,7 @@ Done:
 - [x] DODO:       
    - 0x9445f05a8fac6781d1ab9f138372e207dc606417ebe58b6eeed65e7db69013b5  
    - 0x3f14a928e7cc7c981df27c944a07d855f9456cdd1b8a3306726e287bde8e5723   
+
+- [x] Mooniswap-V2:  
+   - 0x2c3a72347775043d118ad829b0fc68470116d7b63095eabe82cb2054e76fffd1  
+   - 0x1d360afbf6030605d5322edcd71e09bb081c264d366e435d8ee661d1d53747c1
